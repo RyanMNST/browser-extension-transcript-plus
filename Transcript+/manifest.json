@@ -1,0 +1,15 @@
+{
+    "manifest_version": 3,
+    "name": "Transcript+",
+    "version": "0.0.4",
+    "description": "This extension appends additional columns in your Saint Louis University student portal's transcript of records webpage.",
+    "content_scripts": [
+        {
+            "js": ["content.js"],
+            "matches": ["https://*.slu.edu.ph/*/transcript"]
+        }
+    ],
+    "icons": {
+        "512": "portal.png"
+    }
+}
