@@ -2,13 +2,18 @@
 // Version: 0.0.4
 // By: rmnst.dev@gmail.com
 
-// TO-DO:
+/**
+ * 1. Try-Catch Implementation
+ * 2. Security Fix (Remove all innerHTML)
+ * 3. Implement 4-point scale GPA computation
+ */
 
 // Modifies web page styling
 changeHTMLBodyText("Transcript of Records", "Transcript of Records+");
 addNewColumnToTranscriptTable("Grade Unit Value");
 addNewColumnToTranscriptTable("Letter Grade");
 addNewColumnToTranscriptTable("Numerical Equivalent");
+addNewColumnToTranscriptTable("Grade Point");
 
 // Variables 
 var trancriptTableRow = document.getElementsByClassName('mws-table')[0].getElementsByTagName('tbody')[0].getElementsByTagName('tr');
@@ -16,25 +21,26 @@ var sumUnits = 0;
 var sumGUV = 0;
 var accUnits = 0;
 var accGUV = 0;
+var sumGP = 0;
+// Compute GPA
+var accGP = 0;
 
-// Idea 1, identify by child element count. If greater than 1, then set grade unit value 
 for(var i = 0; i < trancriptTableRow.length; i++) {
+
+    // Course Number Name
     var courseNumber = trancriptTableRow[i].innerText.substring(0,trancriptTableRow[i].innerText.indexOf("-"));
+
     if(trancriptTableRow[i].childElementCount != 1){
         
-        // Create table data row
-        // GUV Row
-        var guvRow = document.createElement('td');
-        guvRow.setAttribute("id", "guvRow"+i);
-        guvRow.style.textAlign = "center";
+        // Create additional cells onto the existing grade rows
+        // Grade Unit Value Row
+        var guvRow = insertAdditionalCellToGradeRow("guvRow", i, "center");
         // Letter Grade Equivalent Row
-        var lgeRow = document.createElement('td');
-        lgeRow.setAttribute("id", "lgeRow"+i);
-        lgeRow.style.textAlign = "center";
+        var lgeRow = insertAdditionalCellToGradeRow("lgeRow", i, "center");
         // Numerical Equivalent Row
-        var neRow = document.createElement('td');
-        neRow.setAttribute("id", "neRow"+i);
-        neRow.style.textAlign = "center";
+        var neRow = insertAdditionalCellToGradeRow("neRow", i, "center");
+        // Grade Point Row
+        var gpRow = insertAdditionalCellToGradeRow("gpRow", i, "center");
 
         // Grade logic
         // Edge-case on In Progress grades
@@ -71,14 +77,22 @@ for(var i = 0; i < trancriptTableRow.length; i++) {
         // Numerical Grade Equivalent Row
         neRow.appendChild(document.createTextNode(checkNumericalEquivalent(parseFloat(grade))));
         trancriptTableRow[i].appendChild(neRow);
+        // Grade Point Row
+        var gradePoint = parseFloat(units)*parseFloat(checkNumericalEquivalent(parseFloat(grade)))
+        gpRow.appendChild(document.createTextNode(gradePoint));
+        trancriptTableRow[i].appendChild(gpRow);
 
         // Sum values
         // Skip NSTP
         if(courseNumber !== 'NSTP'){
             var sumUnits = parseFloat(sumUnits) + parseFloat(units);
             var sumGUV = parseFloat(sumGUV) + gupValue;
+            var sumGP = parseFloat(sumGP) + gradePoint;
         }
         var average = parseFloat(sumGUV/sumUnits);
+
+        // For GPA
+        accGP = parseFloat(accGP) + parseFloat(gradePoint); 
 
         // Check if it is time to add average grade row
         let midTable = Boolean(i < trancriptTableRow.length-1);
@@ -90,24 +104,26 @@ for(var i = 0; i < trancriptTableRow.length; i++) {
 
         if((midTable && (checkSemesterHeader === 'SECOND SEMESTER' || checkSemesterHeader === 'FIRST SEMESTER')) || (endTable)){
 
-                insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], i+2, 6, 'avgRow', i)
+                insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], i+2, 7, 'avgRow', i)
                 textFormatCell(document.getElementById('avgRow'+i+'-1'), "right", "bold", "AVERAGE");
-                textFormatCell(document.getElementById('avgRow'+i+'-2'), "center", "bold", nanGradeInProgress(average))
+                textFormatCell(document.getElementById('avgRow'+i+'-2'), "center", "bold", nanGradeInProgress(average, 2))
                 textFormatCell(document.getElementById('avgRow'+i+'-3'), "center", "bold", sumUnits);
                 textFormatCell(document.getElementById('avgRow'+i+'-4'), "center", "bold", sumGUV);
-                textFormatCell(document.getElementById('avgRow'+i+'-5'), "center", "bold", checkLetterGradeEquivalent(nanGradeInProgress(average)));
-                textFormatCell(document.getElementById('avgRow'+i+'-6'), "center", "bold", checkNumericalEquivalent(nanGradeInProgress(average)));
+                textFormatCell(document.getElementById('avgRow'+i+'-5'), "center", "bold", checkLetterGradeEquivalent(nanGradeInProgress(average, 2)));
+                textFormatCell(document.getElementById('avgRow'+i+'-6'), "center", "bold", checkNumericalEquivalent(nanGradeInProgress(average, 2)));
+                textFormatCell(document.getElementById('avgRow'+i+'-7'), "center", "bold", nanGradeInProgress(parseFloat(sumGP/sumUnits), 4));
 
                 accGUV = accGUV + sumGUV;
                 accUnits = accUnits + sumUnits;
                 sumUnits = 0;
                 sumGUV = 0;
+                sumGP = 0;
 
                 i++;
         };
     } else {
         var semesterRowHeader = trancriptTableRow[i].getElementsByTagName('td')[0];
-        semesterRowHeader.colSpan = '7';
+        semesterRowHeader.colSpan = '8';
     };
 };
 
@@ -116,27 +132,56 @@ insertTranscriptHeaderRow(document.getElementsByClassName('mws-table')[0], -1, 7
 
 // Add accumulated average at the end
 var combinedAverage = parseFloat(accGUV/accUnits); 
-insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 6, 'comAvgRow', 0)
+insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comAvgRow', 0)
 textFormatCell(document.getElementById('comAvgRow0-0'), "center", "normal", "S-001");
 textFormatCell(document.getElementById('comAvgRow0-1'), "center", "bold", "ACCUMULATED AVERAGE");
-textFormatCell(document.getElementById('comAvgRow0-2'), "center", "bold", combinedAverage.toFixed(2));
-textFormatCell(document.getElementById('comAvgRow0-3'), "center", "bold", "-");
-textFormatCell(document.getElementById('comAvgRow0-4'), "center", "bold", "-");
-textFormatCell(document.getElementById('comAvgRow0-5'), "center", "bold", checkLetterGradeEquivalent(combinedAverage));
-textFormatCell(document.getElementById('comAvgRow0-6'), "center", "bold", checkNumericalEquivalent(combinedAverage));
+textFormatCell_B(document.getElementById('comAvgRow0-2'), "center", "bold", combinedAverage.toFixed(2), 6);
+
+// Completed Units
+insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comUnits', 0)
+textFormatCell(document.getElementById('comUnits0-0'), "center", "normal", "S-002");
+textFormatCell(document.getElementById('comUnits0-1'), "center", "bold", "COMPLETED UNITS");
+textFormatCell_B(document.getElementById('comUnits0-2'), "center", "bold", accUnits, 6);
+
+// Letter Grade
+insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comLetter', 0)
+textFormatCell(document.getElementById('comLetter0-0'), "center", "normal", "S-003");
+textFormatCell(document.getElementById('comLetter0-1'), "center", "bold", "LETTER GRADE");
+textFormatCell_B(document.getElementById('comLetter0-2'), "center", "bold", checkLetterGradeEquivalent(combinedAverage), 6);
+
+// Numerical Equivalent
+insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comNumEq', 0)
+textFormatCell(document.getElementById('comNumEq0-0'), "center", "normal", "S-004");
+textFormatCell(document.getElementById('comNumEq0-1'), "center", "bold", "NUMERICAL EQUIVALENT GRADE");
+textFormatCell_B(document.getElementById('comNumEq0-2'), "center", "bold", checkNumericalEquivalent(combinedAverage), 6);
+
+// Grade Point Average
+insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comGPA', 0)
+textFormatCell(document.getElementById('comGPA0-0'), "center", "normal", "S-005");
+textFormatCell(document.getElementById('comGPA0-1'), "center", "bold", "GRADE POINT AVERAGE (GPA)");
+textFormatCell_B(document.getElementById('comGPA0-2'), "center", "bold", parseFloat(accGP/accUnits).toFixed(4), 6);
 
 // Add honor potential
 insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comHonRow', 0)
-textFormatCell(document.getElementById('comHonRow0-0'), "center", "normal", "S-002");
+textFormatCell(document.getElementById('comHonRow0-0'), "center", "normal", "S-006");
 textFormatCell(document.getElementById('comHonRow0-1'), "center", "bold", "REMARKS");
-textFormatCell_B(document.getElementById('comHonRow0-2'), "center", "bold", checkGradStatusHonors(combinedAverage), 5);
+textFormatCell_B(document.getElementById('comHonRow0-2'), "center", "bold", checkGradStatusHonors(combinedAverage), 6);
 
 // Add remarks below
-insertDivRemark("*NSTP-CWTS 1, NSTP-CWTS 2, and THESIS course numbers were not included in the computation, thus their Grade Unit Value is 0.");
+insertDivRemark("*NSTP-CWTS 1, NSTP-CWTS 2, and any course number providing a legend grade of HP, P, or F were not included in any computation. They are left out when computing award or honor rankings.");
 insertDivRemark("*Letter Grade and Numerical Equivalent values were retrieved from the SLU Handbook 2015 Edition.");
 insertDivRemark("<br>*You may send your feedback (Errors, Bugs, Recommendations) to the extension's contact email. I am not affiliated with SLU or its TMDD. This browser extension project was made for fun and productivity. Thank you for trying it out :)");
 
 // GENERAL FUNCTIONS
+// Insert a new cell to a grade row
+function insertAdditionalCellToGradeRow(idName, idIndex, cellTextAlign) {
+    var gradeRowCell = document.createElement('td');
+    gradeRowCell.setAttribute("id", idName+idIndex);
+    gradeRowCell.style.textAlign = cellTextAlign;
+    return gradeRowCell;
+}
+
+// Insert remark at the bottom of the page
 function insertDivRemark(remarkText) {
     var remarkElement = document.createElement("div");
     remarkElement.innerHTML = remarkText;
@@ -178,11 +223,11 @@ function textFormatCell_B(cell, cellTextAlign, cellFontWeight, cellInnerHTML, ce
 };
 
 // Check if average value is 'NaN' as caused by the grade row being "In Progress"
-function nanGradeInProgress(average) {
+function nanGradeInProgress(average, decimalValues) {
     if(isNaN(average)){
         return 'N/A'
     } else {
-        return average.toFixed(2);
+        return average.toFixed(decimalValues);
     };
 };
 
