@@ -24,11 +24,12 @@ var accGUV = 0;
 var sumGP = 0;
 // Compute GPA
 var accGP = 0;
+var noFailure = true;
 
 for(var i = 0; i < trancriptTableRow.length; i++) {
 
-    // Course Number Name
-    var courseNumber = trancriptTableRow[i].innerText.substring(0,trancriptTableRow[i].innerText.indexOf("-"));
+    // Get substring if course number is NSTP-CWTS 1 or NSTP-CWTS 2
+    var nstpCourseNumber = trancriptTableRow[i].innerText.substring(0,trancriptTableRow[i].innerText.indexOf("-"));
 
     if(trancriptTableRow[i].childElementCount != 1){
         
@@ -47,13 +48,20 @@ for(var i = 0; i < trancriptTableRow.length; i++) {
         var gradeCell = trancriptTableRow[i].getElementsByTagName('td')[2].innerHTML;
         var grade = "";
         var units = "";
-        if(gradeCell.includes("In Progress")) {
+        try {
+            if(gradeCell.includes("In Progress")) {
+                grade = '0';
+                units = '0';
+            } else {
+                grade = trancriptTableRow[i].getElementsByTagName('td')[2].getElementsByTagName('strong')[0].innerHTML;
+                units = trancriptTableRow[i].getElementsByTagName('td')[3].innerHTML;
+            }
+        } catch(err) {
+            console.log(err);
             grade = '0';
             units = '0';
-        } else {
-            grade = trancriptTableRow[i].getElementsByTagName('td')[2].getElementsByTagName('strong')[0].innerHTML;
-            units = trancriptTableRow[i].getElementsByTagName('td')[3].innerHTML;
-        }
+        };
+
 
         // Grade logic edge-cases
         // Edge-case on legend grades grades
@@ -64,7 +72,7 @@ for(var i = 0; i < trancriptTableRow.length; i++) {
 
         // Append Table Data
         // GUV Row
-        if(courseNumber !== 'NSTP'){
+        if(nstpCourseNumber !== 'NSTP'){
             var gupValue = parseFloat(grade) * parseFloat(units);
         } else {
             var gupValue = parseFloat(0);
@@ -84,7 +92,7 @@ for(var i = 0; i < trancriptTableRow.length; i++) {
 
         // Sum values
         // Skip NSTP
-        if(courseNumber !== 'NSTP'){
+        if(nstpCourseNumber !== 'NSTP'){
             var sumUnits = parseFloat(sumUnits) + parseFloat(units);
             var sumGUV = parseFloat(sumGUV) + gupValue;
             var sumGP = parseFloat(sumGP) + gradePoint;
@@ -111,7 +119,7 @@ for(var i = 0; i < trancriptTableRow.length; i++) {
                 textFormatCell(document.getElementById('avgRow'+i+'-4'), "center", "bold", sumGUV);
                 textFormatCell(document.getElementById('avgRow'+i+'-5'), "center", "bold", checkLetterGradeEquivalent(nanGradeInProgress(average, 2)));
                 textFormatCell(document.getElementById('avgRow'+i+'-6'), "center", "bold", checkNumericalEquivalent(nanGradeInProgress(average, 2)));
-                textFormatCell(document.getElementById('avgRow'+i+'-7'), "center", "bold", nanGradeInProgress(parseFloat(sumGP/sumUnits), 4));
+                textFormatCell(document.getElementById('avgRow'+i+'-7'), "center", "bold", nanGradeInProgress(parseFloat(sumGP/sumUnits), 2));
 
                 accGUV = accGUV + sumGUV;
                 accUnits = accUnits + sumUnits;
@@ -130,42 +138,19 @@ for(var i = 0; i < trancriptTableRow.length; i++) {
 // Create summary row
 insertTranscriptHeaderRow(document.getElementsByClassName('mws-table')[0], -1, 7, 'combined-avg-header', "<strong>SUMMARY</strong>");
 
-// Add accumulated average at the end
 var combinedAverage = parseFloat(accGUV/accUnits); 
-insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comAvgRow', 0)
-textFormatCell(document.getElementById('comAvgRow0-0'), "center", "normal", "S-001");
-textFormatCell(document.getElementById('comAvgRow0-1'), "center", "bold", "ACCUMULATED AVERAGE");
-textFormatCell_B(document.getElementById('comAvgRow0-2'), "center", "bold", combinedAverage.toFixed(2), 6);
-
+// Accumulated Average
+insertSummaryRows('comAvgRow', 'S-001', 'ACCUMULATED AVERAGE', combinedAverage.toFixed(4), 6);
 // Completed Units
-insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comUnits', 0)
-textFormatCell(document.getElementById('comUnits0-0'), "center", "normal", "S-002");
-textFormatCell(document.getElementById('comUnits0-1'), "center", "bold", "COMPLETED UNITS");
-textFormatCell_B(document.getElementById('comUnits0-2'), "center", "bold", accUnits, 6);
-
+insertSummaryRows('comUnits', 'S-002', 'COMPLETED UNITS', accUnits, 6)
 // Letter Grade
-insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comLetter', 0)
-textFormatCell(document.getElementById('comLetter0-0'), "center", "normal", "S-003");
-textFormatCell(document.getElementById('comLetter0-1'), "center", "bold", "LETTER GRADE");
-textFormatCell_B(document.getElementById('comLetter0-2'), "center", "bold", checkLetterGradeEquivalent(combinedAverage), 6);
-
+insertSummaryRows('comLetter', 'S-003', 'LETTER GRADE', checkLetterGradeEquivalent(combinedAverage), 6)
 // Numerical Equivalent
-insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comNumEq', 0)
-textFormatCell(document.getElementById('comNumEq0-0'), "center", "normal", "S-004");
-textFormatCell(document.getElementById('comNumEq0-1'), "center", "bold", "NUMERICAL EQUIVALENT GRADE");
-textFormatCell_B(document.getElementById('comNumEq0-2'), "center", "bold", checkNumericalEquivalent(combinedAverage), 6);
-
+insertSummaryRows('comNumEq', 'S-004', 'NUMERICAL EQUIVALENT GRADE', checkNumericalEquivalent(combinedAverage), 6)
 // Grade Point Average
-insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comGPA', 0)
-textFormatCell(document.getElementById('comGPA0-0'), "center", "normal", "S-005");
-textFormatCell(document.getElementById('comGPA0-1'), "center", "bold", "GRADE POINT AVERAGE (GPA)");
-textFormatCell_B(document.getElementById('comGPA0-2'), "center", "bold", parseFloat(accGP/accUnits).toFixed(4), 6);
-
+insertSummaryRows('comGPA', 'S-005', 'GRADE POINT AVERAGE (GPA)', parseFloat(accGP/accUnits).toFixed(4), 6)
 // Add honor potential
-insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, 'comHonRow', 0)
-textFormatCell(document.getElementById('comHonRow0-0'), "center", "normal", "S-006");
-textFormatCell(document.getElementById('comHonRow0-1'), "center", "bold", "REMARKS");
-textFormatCell_B(document.getElementById('comHonRow0-2'), "center", "bold", checkGradStatusHonors(combinedAverage), 6);
+insertSummaryRows('comHonRow', 'S-006', 'REMARKS', checkGradStatusHonors(combinedAverage), 6)
 
 // Add remarks below
 insertDivRemark("*NSTP-CWTS 1, NSTP-CWTS 2, and any course number providing a legend grade of HP, P, or F were not included in any computation. They are left out when computing award or honor rankings.");
@@ -173,6 +158,14 @@ insertDivRemark("*Letter Grade and Numerical Equivalent values were retrieved fr
 insertDivRemark("<br>*You may send your feedback (Errors, Bugs, Recommendations) to the extension's contact email. I am not affiliated with SLU or its TMDD. This browser extension project was made for fun and productivity. Thank you for trying it out :)");
 
 // GENERAL FUNCTIONS
+// Insert summary rows
+function insertSummaryRows(rowNameDiscriminator, summaryRowCode, summaryRowTitle, summaryRowValue, columnSpan) {
+    insertTranscriptRowAndCell(document.getElementsByClassName('mws-table')[0], -1, 2, rowNameDiscriminator, 0)
+    textFormatCell(document.getElementById(rowNameDiscriminator+"0-0"), "center", "normal", summaryRowCode);
+    textFormatCell(document.getElementById(rowNameDiscriminator+"0-1"), "center", "bold", summaryRowTitle);
+    textFormatCell_B(document.getElementById(rowNameDiscriminator+"0-2"), "center", "bold", summaryRowValue, columnSpan);
+}
+
 // Insert a new cell to a grade row
 function insertAdditionalCellToGradeRow(idName, idIndex, cellTextAlign) {
     var gradeRowCell = document.createElement('td');
@@ -264,6 +257,19 @@ function checkNumericalEquivalent(grade) {
     else if(grade >= 80) {return '2.50'}
     else if(grade >= 75) {return '3.00'}
     else { return '4.00'}
+}
+
+// Determine Reverse Numerical Equivalent from Percentage Equivalent
+function checkNumericalEquivalent_B(grade) {
+    if(grade === 'N/A') {return 'N/A'}
+    else if(grade >= 97) {return '4.00'}
+    else if(grade >= 94) {return '3.75'}
+    else if(grade >= 91) {return '3.50'}
+    else if(grade >= 88) {return '3.25'}
+    else if(grade >= 85) {return '3.00'}
+    else if(grade >= 80) {return '2.50'}
+    else if(grade >= 75) {return '2.00'}
+    else { return '1.00'}
 }
 
 // Determine Legend Grade
