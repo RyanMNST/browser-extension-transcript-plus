@@ -2,7 +2,7 @@
     "manifest_version": 3,
     "name": "Transcript+",
     "version": "0.0.5",
-    "description": "This extension appends additional columns in your Saint Louis University student portal's transcript of records webpage.",
+    "description": "Transcript+ computes your grades for you on your iSLU Portal's Transcript of Records webpage.",
     "content_scripts": [
         {
             "js": ["content.js"],

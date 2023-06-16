@@ -1,5 +1,5 @@
 // Transcript+ 
-// Version: 0.0.4
+// Version: 0.0.5
 // By: rmnst.dev@gmail.com
 
 /**
@@ -140,22 +140,24 @@ insertTranscriptHeaderRow(document.getElementsByClassName('mws-table')[0], -1, 7
 
 var combinedAverage = parseFloat(accGUV/accUnits); 
 // Accumulated Average
-insertSummaryRows('comAvgRow', 'S-001', 'ACCUMULATED AVERAGE', combinedAverage.toFixed(4), 6);
+insertSummaryRows('comAvgRow', 'S-001', 'GENERAL WEIGHTED AVERAGE (GWA)', combinedAverage.toFixed(4), 6);
 // Completed Units
 insertSummaryRows('comUnits', 'S-002', 'COMPLETED UNITS', accUnits, 6)
+// Grade Unit Value Sum
+insertSummaryRows('comGUV', 'S-003', 'GRADE UNIT VALUE SUM', accGUV, 6)
 // Letter Grade
-insertSummaryRows('comLetter', 'S-003', 'LETTER GRADE', checkLetterGradeEquivalent(combinedAverage), 6)
+insertSummaryRows('comLetter', 'S-004', 'LETTER GRADE', checkLetterGradeEquivalent(combinedAverage), 6)
 // Numerical Equivalent
-insertSummaryRows('comNumEq', 'S-004', 'NUMERICAL EQUIVALENT GRADE', checkNumericalEquivalent(combinedAverage), 6)
+insertSummaryRows('comNumEq', 'S-005', 'NUMERICAL EQUIVALENT GRADE', checkNumericalEquivalent(combinedAverage), 6)
 // Grade Point Average
-insertSummaryRows('comGPA', 'S-005', 'GRADE POINT AVERAGE (GPA)', parseFloat(accGP/accUnits).toFixed(4), 6)
+insertSummaryRows('comGPA', 'S-006', 'GRADE POINT AVERAGE (GPA)', parseFloat(accGP/accUnits).toFixed(4), 6)
 // Add honor potential
-insertSummaryRows('comHonRow', 'S-006', 'REMARKS', checkGradStatusHonors(combinedAverage), 6)
+insertSummaryRows('comHonRow', 'S-007', 'REMARKS', checkGradStatusHonors(combinedAverage), 6)
 
 // Add remarks below
-insertDivRemark("*NSTP-CWTS 1, NSTP-CWTS 2, and any course number providing a legend grade of HP, P, or F were not included in any computation. They are left out when computing award or honor rankings.");
+insertDivRemark("*NSTP-CWTS 1, NSTP-CWTS 2, and any course number providing a legend grade of HP, P, or F were excluded in any computation. If there are other subjects like this in your program, please feel free to reach out via the extension's contact email.");
 insertDivRemark("*Letter Grade and Numerical Equivalent values were retrieved from the SLU Handbook 2015 Edition.");
-insertDivRemark("<br>*You may send your feedback (Errors, Bugs, Recommendations) to the extension's contact email. I am not affiliated with SLU or its TMDD. This browser extension project was made for fun and productivity. Thank you for trying it out :)");
+insertDivRemark("<br>*You may send your feedback (Errors, Bugs, Recommendations) to the extension's contact email. I am not affiliated with SLU TMDD. This browser extension project was made for fun and productivity. Thank you for trying it out :)");
 
 // GENERAL FUNCTIONS
 // Insert summary rows
